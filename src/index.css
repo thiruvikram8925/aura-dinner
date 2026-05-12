@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", serif;
+  
+  --color-gold: #C5A028;
+  --color-gold-muted: rgba(197,160,40,0.2);
+  --color-dark: #0A0A0B;
+  --color-glass: rgba(255,255,255,0.03);
+  --color-glass-border: rgba(255,255,255,0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-dark text-white font-sans overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-glass backdrop-blur-xl border border-glass-border rounded-[1.5rem] shadow-2xl;
+  }
+  
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, auto);
+    gap: 1rem;
+  }
+
+  .nav-rail {
+    @apply w-20 h-screen border-r border-glass-border flex flex-col items-center py-8 sticky top-0 bg-dark z-50;
+  }
+}
+
+/* Scrollbar refine */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0B;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(197,160,40,0.3);
+  border-radius: 10px;
+}
+
