@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
     if (!isDbConnected()) {
       return res.json(getMockData('Review'));
     }
-    const reviews = await Review.find().sort({ createdAt: -1 });
+    const reviews = await Review.findAll({ order: [['createdAt', 'DESC']] });
     res.json(reviews);
   } catch (error) {
     res.json(getMockData('Review'));
@@ -23,11 +23,9 @@ router.post('/', async (req, res) => {
     if (!isDbConnected()) {
       review = saveMockData('Review', req.body);
     } else {
-      review = new Review(req.body);
-      await review.save();
+      review = await Review.create(req.body);
     }
 
-    // Export to Excel (can work even if DB is mock)
     try {
       await appendToExcel('reviews.xlsx', [
         review.userName,

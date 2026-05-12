@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import { sequelize } from '../models';
 
 // Simple in-memory storage fallback
 const mockStorage: Record<string, any[]> = {
@@ -54,6 +54,12 @@ const mockStorage: Record<string, any[]> = {
   User: []
 };
 
+let dbConnected = false;
+
+export const setDbConnected = (status: boolean) => {
+  dbConnected = status;
+};
+
 export const getMockData = (modelName: string) => {
   return mockStorage[modelName] || [];
 };
@@ -65,4 +71,4 @@ export const saveMockData = (modelName: string, data: any) => {
   return newItem;
 };
 
-export const isDbConnected = () => mongoose.connection.readyState === 1;
+export const isDbConnected = () => dbConnected;

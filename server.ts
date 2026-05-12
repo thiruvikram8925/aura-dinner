@@ -2,10 +2,10 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
-import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 import apiRoutes from './src/server/routes';
-import { FoodItem, User } from './src/server/models';
+import { sequelize, initDatabase, FoodItem, User } from './src/server/models';
+import { setDbConnected } from './src/server/utils/dbFallback';
 import bcrypt from 'bcryptjs';
 
 dotenv.config();
@@ -14,28 +14,41 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Database Connection
-  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/aura_dining';
-  
-  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 2000 })
-    .then(async () => {
-      console.log('Connected to MongoDB');
-      // ... (internal seeding logic)
-    })
-    .catch(err => {
-      console.warn('--- DATABASE NOTICE ---');
-      console.warn('MongoDB connection failed (No local DB found).');
-      console.warn('SYSTEM: Automatically enabled MOCK DATA FALLBACK for demo purposes.');
-      console.warn('To use a real DB, add MONGODB_URI to your Secrets.');
-      console.warn('------------------------');
-    });
+  // Database Connection (MySQL via Sequelize)
+  try {
+    await sequelize.authenticate();
+    console.log('Connected to MySQL');
+    await initDatabase();
+    setDbConnected(true);
+
+    // Seed default data if tables are empty
+    const foodCount = await FoodItem.count();
+    if (foodCount === 0) {
+      console.log('Seeding default menu items...');
+    }
+
+    const adminExists = await User.findOne({ where: { email: 'admin@aura.com' } });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await User.create({ name: 'Admin', email: 'admin@aura.com', password: hashedPassword, role: 'admin' });
+      console.log('Default admin user created.');
+    }
+  } catch (err) {
+    console.warn('--- DATABASE NOTICE ---');
+    console.warn('MySQL connection failed (No local DB found).');
+    console.warn('SYSTEM: Automatically enabled MOCK DATA FALLBACK for demo purposes.');
+    console.warn('To use a real DB, install MySQL and configure MYSQL_* in .env');
+    console.warn('------------------------');
+    setDbConnected(false);
+  }
 
   app.use(cors());
   app.use(express.json());
 
   // Health Check
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', database: mongoose.connection.readyState === 1 ? 'connected' : 'mock-mode' });
+    const { isDbConnected } = require('./src/server/utils/dbFallback');
+    res.json({ status: 'ok', database: isDbConnected() ? 'connected' : 'mock-mode' });
   });
 
   // API Routes
